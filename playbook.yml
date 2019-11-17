@@ -1,0 +1,46 @@
+- hosts: all
+  become: true
+  become_user: root
+  tasks:
+  - name: Patching /etc/hosts
+    blockinfile:
+      path: /etc/hosts
+      block: "{{ lookup('file', 'files/etc/hosts') }}"
+  - name: Installing Nginx
+    apt: pkg=nginx
+  - name: Copying Nginx config
+    copy: src=files/etc/nginx/sites-available/default dest=/etc/nginx/sites-available/
+  - name: Reloading Nginx configuration
+    command: 'systemctl reload nginx'
+  - name: Installing Minio server
+    command:
+      cmd: 'wget https://dl.min.io/server/minio/release/linux-amd64/minio'
+      creates: '/usr/local/bin/minio'
+      chdir: /usr/local/bin
+  - name: Installing Minio client
+    command:
+      cmd: 'wget https://dl.min.io/client/mc/release/linux-amd64/mc'
+      creates: '/usr/local/bin/mc'
+      chdir: /usr/local/bin
+  - name: Adding executable permission for Minio server
+    file: dest=/usr/local/bin/minio mode=a+x
+  - name: Adding executable permission for Minio client
+    file: dest=/usr/local/bin/mc mode=a+x
+  - name: Installing Minio server systemd unit
+    copy: src=files/lib/systemd/system/minio.service dest=/lib/systemd/system/
+  - name: Copying Minio server config
+    copy: src=files/etc/default/minio dest=/etc/default/
+  - name: Creating Minio data directory
+    file:
+      path: /var/lib/minio
+      state: directory
+  - name: Reloading systemd daemon configuration
+    command: 'systemctl daemon-reload'
+  - name: Starting Minio
+    command: 'systemctl start minio'
+  - name: Copying Minio client config
+    copy: src=files/root/.mc/config.json dest=/root/.mc/
+  - name: Copying script for create minio test user
+    copy: src=files/root/create-minio-user.sh /root/
+  - name: Copying damaged test image
+    copy: src=files/root/testimage.jpg /root/
