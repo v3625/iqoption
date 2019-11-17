@@ -41,6 +41,6 @@
   - name: Copying Minio client config
     copy: src=files/root/.mc/config.json dest=/root/.mc/
   - name: Copying script for create minio test user
-    copy: src=files/root/create-minio-user.sh /root/
+    copy: src=files/root/create-minio-user.sh dest=/root/ mode=a+x
   - name: Copying damaged test image
-    copy: src=files/root/testimage.jpg /root/
+    copy: src=files/root/testimage.jpg dest=/root/
